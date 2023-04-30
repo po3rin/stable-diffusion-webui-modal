@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "stable-diffusion-webui-modal"
+version = "0.1.0"
+description = ""
+authors = ["Hiromu Nakamura <hiromu-nakamura@m3.com>"]
+readme = "README.md"
+packages = [{include = "stable_diffusion_webui_modal"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
