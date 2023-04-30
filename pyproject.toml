@@ -8,6 +8,7 @@ packages = [{include = "stable_diffusion_webui_modal"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+huggingface-hub = "^0.14.1"
 
 
 [build-system]

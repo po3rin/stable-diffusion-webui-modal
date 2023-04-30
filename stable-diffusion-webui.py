@@ -4,10 +4,8 @@ import subprocess
 import sys
 import shlex
 from pathlib import Path
-
 import modal
-from huggingface_hub import hf_hub_download
-from launch import start, prepare_environment
+
 
 # modal系の変数の定義
 stub = modal.Stub("stable-diffusion-webui")
@@ -29,8 +27,6 @@ model_ids = [
         "model_path": "derrida_final.ckpt",
     },
 ]
-
-
 @stub.function(
     image=modal.Image.from_dockerhub("python:3.8-slim")
     .apt_install(
@@ -89,6 +85,7 @@ model_ids = [
     timeout=6000,
 )
 async def run_stable_diffusion_webui():
+    print("\n---------- セットアップ開始 ----------\n")
 
     webui_dir_path = Path(webui_model_dir)
     if not webui_dir_path.exists():
@@ -96,11 +93,15 @@ async def run_stable_diffusion_webui():
 
     # Hugging faceからファイルをダウンロードしてくる関数
     def download_hf_file(repo_id, filename):
+        from huggingface_hub import hf_hub_download
+
         download_dir = hf_hub_download(repo_id=repo_id, filename=filename)
         return download_dir
 
 
     for model_id in model_ids:
+        print(model_id["repo_id"] + "のセットアップを開始します...")
+
         if not Path(webui_model_dir + model_id["model_path"]).exists():
             # モデルのダウンロード＆コピー
             model_downloaded_dir = download_hf_file(
@@ -121,11 +122,15 @@ async def run_stable_diffusion_webui():
                 config_downloaded_dir, webui_model_dir + model_id["config_file_path"]
             )
 
+        print(model_id["repo_id"] + "のセットアップが完了しました！")
+
+    print("\n---------- セットアップ完了 ----------\n")
+
     # WebUIを起動
     sys.path.append(webui_dir)
     sys.argv += shlex.split("--skip-install --xformers")
     os.chdir(webui_dir)
-    
+    from launch import start, prepare_environment
 
     prepare_environment()
     # 最初のargumentは無視されるので注意
