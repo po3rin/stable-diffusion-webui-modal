@@ -85,8 +85,6 @@ model_ids = [
     timeout=6000,
 )
 async def run_stable_diffusion_webui():
-    print("\n---------- セットアップ開始 ----------\n")
-
     webui_dir_path = Path(webui_model_dir)
     if not webui_dir_path.exists():
         subprocess.run(f"git clone -b v2.0 https://github.com/camenduru/stable-diffusion-webui {webui_dir}", shell=True)
@@ -100,8 +98,6 @@ async def run_stable_diffusion_webui():
 
 
     for model_id in model_ids:
-        print(model_id["repo_id"] + "のセットアップを開始します...")
-
         if not Path(webui_model_dir + model_id["model_path"]).exists():
             # モデルのダウンロード＆コピー
             model_downloaded_dir = download_hf_file(
@@ -121,10 +117,6 @@ async def run_stable_diffusion_webui():
             shutil.copy(
                 config_downloaded_dir, webui_model_dir + model_id["config_file_path"]
             )
-
-        print(model_id["repo_id"] + "のセットアップが完了しました！")
-
-    print("\n---------- セットアップ完了 ----------\n")
 
     # WebUIを起動
     sys.path.append(webui_dir)
