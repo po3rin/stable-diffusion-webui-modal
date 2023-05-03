@@ -89,7 +89,6 @@ async def run_stable_diffusion_webui():
     if not webui_dir_path.exists():
         subprocess.run(f"git clone -b v2.0 https://github.com/camenduru/stable-diffusion-webui {webui_dir}", shell=True)
 
-    # Hugging faceからファイルをダウンロードしてくる関数
     def download_hf_file(repo_id, filename):
         from huggingface_hub import hf_hub_download
 
@@ -99,7 +98,6 @@ async def run_stable_diffusion_webui():
 
     for model_id in model_ids:
         if not Path(webui_model_dir + model_id["model_path"]).exists():
-            # モデルのダウンロード＆コピー
             model_downloaded_dir = download_hf_file(
                 model_id["repo_id"],
                 model_id["model_path"],
@@ -118,7 +116,6 @@ async def run_stable_diffusion_webui():
                 config_downloaded_dir, webui_model_dir + model_id["config_file_path"]
             )
 
-    # WebUIを起動
     sys.path.append(webui_dir)
     sys.argv += shlex.split("--skip-install --xformers")
     os.chdir(webui_dir)
