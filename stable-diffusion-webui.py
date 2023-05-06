@@ -21,12 +21,9 @@ model_ids = [
         "repo_id": "hakurei/waifu-diffusion-v1-4",
         "model_path": "wd-1-4-anime_e1.ckpt",
         "config_file_path": "wd-1-4-anime_e1.yaml",
-    },
-    {
-        "repo_id": "naclbit/trinart_derrida_characters_v2_stable_diffusion",
-        "model_path": "derrida_final.ckpt",
-    },
+    }
 ]
+
 @stub.function(
     image=modal.Image.from_dockerhub("python:3.8-slim")
     .apt_install(
@@ -108,7 +105,6 @@ async def run_stable_diffusion_webui():
           continue
 
         if not Path(webui_model_dir + model_id["config_file_path"]).exists():
-            # コンフィグのダウンロード＆コピー
             config_downloaded_dir = download_hf_file(
                 model_id["repo_id"], model_id["config_file_path"]
             )
@@ -122,11 +118,10 @@ async def run_stable_diffusion_webui():
     from launch import start, prepare_environment
 
     prepare_environment()
-    # 最初のargumentは無視されるので注意
     sys.argv = shlex.split("--a --gradio-debug --share --xformers")
     start()
 
 
-@stub.local_entrypoint
+@stub.local_entrypoint()
 def main():
     run_stable_diffusion_webui.call()
