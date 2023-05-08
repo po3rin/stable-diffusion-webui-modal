@@ -7,15 +7,12 @@ from pathlib import Path
 import modal
 
 
-# modal系の変数の定義
 stub = modal.Stub("stable-diffusion-webui")
 volume_main = modal.SharedVolume().persist("stable-diffusion-webui-main")
 
-# 色んなパスの定義
 webui_dir = "/content/stable-diffusion-webui"
 webui_model_dir = webui_dir + "/models/Stable-diffusion/"
 
-# モデルのID
 model_ids = [
     {
         "repo_id": "hakurei/waifu-diffusion-v1-4",
@@ -82,13 +79,13 @@ model_ids = [
     timeout=6000,
 )
 async def run_stable_diffusion_webui():
+    from huggingface_hub import hf_hub_download
+
     webui_dir_path = Path(webui_model_dir)
     if not webui_dir_path.exists():
         subprocess.run(f"git clone -b v2.0 https://github.com/camenduru/stable-diffusion-webui {webui_dir}", shell=True)
 
     def download_hf_file(repo_id, filename):
-        from huggingface_hub import hf_hub_download
-
         download_dir = hf_hub_download(repo_id=repo_id, filename=filename)
         return download_dir
 
@@ -118,7 +115,7 @@ async def run_stable_diffusion_webui():
     from launch import start, prepare_environment
 
     prepare_environment()
-    sys.argv = shlex.split("--a --gradio-debug --share --xformers")
+    sys.argv = shlex.split("-- --gradio-debug --share --xformers --enable-insecure-extension-access")
     start()
 
 
