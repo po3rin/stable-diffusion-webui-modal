@@ -83,7 +83,7 @@ async def run_stable_diffusion_webui():
 
     webui_dir_path = Path(webui_model_dir)
     if not webui_dir_path.exists():
-        subprocess.run(f"git clone -b v2.0 https://github.com/camenduru/stable-diffusion-webui {webui_dir}", shell=True)
+        subprocess.run(f"git clone -b v2.0 https://github.com/AUTOMATIC1111/stable-diffusion-webui {webui_dir}", shell=True)
 
     def download_hf_file(repo_id, filename):
         download_dir = hf_hub_download(repo_id=repo_id, filename=filename)
