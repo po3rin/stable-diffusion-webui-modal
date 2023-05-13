@@ -1,10 +1,12 @@
-import os
+from colorama import Fore
+from pathlib import Path
+
+import modal
 import shutil
 import subprocess
 import sys
 import shlex
-from pathlib import Path
-import modal
+import os
 
 
 stub = modal.Stub("stable-diffusion-webui")
@@ -13,18 +15,19 @@ volume_main = modal.SharedVolume().persist("stable-diffusion-webui-main")
 webui_dir = "/content/stable-diffusion-webui"
 webui_model_dir = webui_dir + "/models/Stable-diffusion/"
 
+# 読み込むモデルのリスト
 model_ids = [
     {
         "repo_id": "hakurei/waifu-diffusion-v1-4",
         "model_path": "wd-1-4-anime_e1.ckpt",
         "config_file_path": "wd-1-4-anime_e1.yaml",
-    }
+    } 
 ]
 
 @stub.function(
-    image=modal.Image.from_dockerhub("python:3.8-slim")
+    image=modal.Image.from_dockerhub("python:3.10-slim")
     .apt_install(
-        "git", "libgl1-mesa-dev", "libglib2.0-0", "libsm6", "libxrender1", "libxext6"
+        "gcc", "git", "libgl1-mesa-dev", "libglib2.0-0", "libsm6", "libxrender1", "libxext6", "libcairo2-dev", "libcairo2"
     )
     .run_commands(
         "pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers"
@@ -35,7 +38,7 @@ model_ids = [
         "accelerate==0.12.0",
         "basicsr==1.4.2",
         "gfpgan==1.3.8",
-        "gradio==3.16.2",
+        "gradio==3.30.0",
         "numpy==1.23.3",
         "Pillow==9.4.0",
         "realesrgan==0.3.0",
@@ -62,12 +65,11 @@ model_ids = [
         "tensorboard==2.9.1",
         "taming-transformers==0.0.1",
         "clip",
-        "xformers",
         "test-tube",
         "diffusers",
         "invisible-watermark",
         "pyngrok",
-        "xformers==0.0.16rc425",
+        "xformers==0.0.17",
         "gdown",
         "huggingface_hub",
         "colorama",
@@ -78,17 +80,22 @@ model_ids = [
     gpu="a10g",
     timeout=6000,
 )
-async def run_stable_diffusion_webui():
+
+
+def download_hf_file(repo_id, filename) -> str:
+    """
+    Hugging faceからファイルをダウンロードしてくる関数
+    """
     from huggingface_hub import hf_hub_download
 
+    download_dir = hf_hub_download(repo_id=repo_id, filename=filename)
+    return download_dir
+
+
+async def run_stable_diffusion_webui():
     webui_dir_path = Path(webui_model_dir)
     if not webui_dir_path.exists():
-        subprocess.run(f"git clone -b v2.0 https://github.com/AUTOMATIC1111/stable-diffusion-webui {webui_dir}", shell=True)
-
-    def download_hf_file(repo_id, filename):
-        download_dir = hf_hub_download(repo_id=repo_id, filename=filename)
-        return download_dir
-
+        subprocess.run(f"git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui  {webui_dir}", shell=True)
 
     for model_id in model_ids:
         if not Path(webui_model_dir + model_id["model_path"]).exists():
@@ -96,26 +103,27 @@ async def run_stable_diffusion_webui():
                 model_id["repo_id"],
                 model_id["model_path"],
             )
-            shutil.copy(model_downloaded_dir, webui_model_dir + model_id["model_path"])
+            shutil.copy(model_downloaded_dir, webui_model_dir + os.path.basename(model_id["model_path"]))
 
         if "config_file_path" not in model_id:
           continue
 
         if not Path(webui_model_dir + model_id["config_file_path"]).exists():
+            # コンフィグのダウンロード＆コピー
             config_downloaded_dir = download_hf_file(
                 model_id["repo_id"], model_id["config_file_path"]
             )
-            shutil.copy(
-                config_downloaded_dir, webui_model_dir + model_id["config_file_path"]
-            )
+            shutil.copy(config_downloaded_dir, webui_model_dir + os.path.basename(model_id["config_file_path"]))
 
+        print(Fore.GREEN + model_id["repo_id"] + "のセットアップが完了しました！")
+
+    # WebUIを起動
+    from launch import start, prepare_environment
     sys.path.append(webui_dir)
     sys.argv += shlex.split("--skip-install --xformers")
     os.chdir(webui_dir)
-    from launch import start, prepare_environment
-
     prepare_environment()
-    sys.argv = shlex.split("-- --gradio-debug --share --xformers --enable-insecure-extension-access")
+    sys.argv = shlex.split("--gradio-debug --share --xformers --enable-insecure-extension-access")
     start()
 
 
