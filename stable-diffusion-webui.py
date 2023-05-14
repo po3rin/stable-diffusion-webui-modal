@@ -15,16 +15,18 @@ webui_dir = "/content/stable-diffusion-webui"
 sd_dir = webui_dir + "/models/Stable-diffusion/"
 
 # 読み込むモデルのリスト
-model_ids = [{
-    "repo_id": "hakurei/waifu-diffusion-v1-4",
-    "model_path": "wd-1-4-anime_e1.ckpt",
-    "config_file_path": "wd-1-4-anime_e1.yaml",
-}]
+models = [
+    {
+        "repo_id": "hakurei/waifu-diffusion-v1-4",
+        "model_path": "wd-1-4-anime_e1.ckpt",
+        "config_file_path": "wd-1-4-anime_e1.yaml",
+    }
+]
 
 @stub.function(
     image=modal.Image.from_dockerhub("python:3.10-slim").apt_install(
         "gcc", "git", "libgl1-mesa-dev", "libglib2.0-0", "libsm6",
-        "libxrender1", "libxext6", "libcairo2").
+        "libxrender1", "libxext6", "libcairo2-dev", "libcairo2").
     run_commands(
         "pip install -e git+https://github.com/CompVis/"\
             "taming-transformers.git@master"\
@@ -97,26 +99,26 @@ async def run_stable_diffusion_webui():
         download_dir = hf_hub_download(repo_id=repo_id, filename=filename)
         return download_dir
 
-    for model_id in model_ids:
-        if not Path(sd_dir + model_id["model_path"]).exists():
+    for model in models:
+        if not Path(sd_dir + model["model_path"]).exists():
             model_downloaded_dir = download_hf_file(
-                model_id["repo_id"],
-                model_id["model_path"],
+                model["repo_id"],
+                model["model_path"],
             )
             shutil.copy(model_downloaded_dir,
-                        sd_dir + os.path.basename(model_id["model_path"]))
+                        sd_dir + os.path.basename(model["model_path"]))
 
-        if "config_file_path" not in model_id:
+        if "config_file_path" not in model:
             continue
 
-        if not Path(sd_dir + model_id["config_file_path"]).exists():
+        if not Path(sd_dir + model["config_file_path"]).exists():
             config_downloaded_dir = download_hf_file(
-                model_id["repo_id"], model_id["config_file_path"])
+                model["repo_id"], model["config_file_path"])
             shutil.copy(
                 config_downloaded_dir,
-                sd_dir + os.path.basename(model_id["config_file_path"]))
+                sd_dir + os.path.basename(model["config_file_path"]))
 
-        print(Fore.GREEN + model_id["repo_id"] + "のセットアップが完了しました！")
+        print(Fore.GREEN + model["repo_id"] + "のセットアップが完了しました！")
 
     sys.path.append(webui_dir)
     sys.argv += shlex.split("--skip-install --xformers")
